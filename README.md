@@ -24,3 +24,9 @@ Levanta un stack previamente registrado y permite hacer operaciones básicas den
 > [static] Reconstruye el contenido estático
 > [cache] Limpia el cache de magento
 
+##stopStack.sh
+Detiene la ejecución de un stack
+####Uso:
+```
+./stopStack.sh nombreStack
+```
