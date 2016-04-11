@@ -8,7 +8,6 @@
 # ------------------
 #
 # APLICAR PARAMETROS ADICIONALES
-#echo "$#";
 for var in "$@"
 do
 	if [ "${var:0:1}" != "-" ]; then
