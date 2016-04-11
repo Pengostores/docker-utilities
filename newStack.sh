@@ -9,7 +9,27 @@
 # ------------------
 #
 create() {
-#CONFIG COMPOSE
+#PUERTOS SIGUIENTES
+    ports=(`docker ps -a --format '{{.Ports}}' | grep ':[0-9]*' -o`)
+    phpPort=9000
+    for port in ${ports[*]};do
+        if [ $((${port:1})) -gt 8999 ]; then
+            if [ $((phpPort)) -lt $((${port:1})) ]; then
+                phpPort=$((${port:1}))
+            fi
+        fi
+    done
+    phpNextPort=$((phpPort+1))
+    nginxPort=8080
+    for port in ${ports[*]};do
+        if [ $((${port:1})) -lt 8999 ]; then
+            if [ $((nginxPort)) -lt $((${port:1})) ]; then
+                nginxPort=$((${port:1}))
+            fi
+        fi
+    done
+    nginxNextPort=$((nginxPort+1))
+#COMPOSE
     if [ ! -f "/usr/local/bin/docker-compose" ]; then
         echo "No tienes instalado docker-compose. Instalarlo? [Y/n]"
         read temp
@@ -26,8 +46,7 @@ create() {
             return 0;
         fi
     fi
-#CONFIG SECTION
-    ports=(`docker ps -a --format '{{.Ports}}' | grep ':[0-9]*' -o`)
+#CONFIGURACION
     echo "------------------"
     echo "Crear un nuevo stack para Magento2"
     echo "------------------"
@@ -44,11 +63,11 @@ create() {
         echo "Ya tienes un stack llamado $stack"
         return 0
     fi
-    echo "Puerto de PHP: [9000]"
+    echo "Puerto de PHP: [$phpNextPort]"
     read phpPort
     phpPort="${phpPort}" | sed -e 's/^[ \t]*//'
     if [ "$phpPort" == "" ]; then
-        phpPort="9000"
+        phpPort="$phpNextPort"
     fi
     for port in ${ports[*]};do
         if [ "${port:1}" == "$phpPort" ]; then
@@ -56,11 +75,11 @@ create() {
             return 0
         fi
     done
-    echo "Puerto de Nginx: [8080]"
+    echo "Puerto de Nginx: [$nginxNextPort]"
     read nginxPort
     nginxPort="${nginxPort}" | sed -e 's/^[ \t]*//'
     if [ "$nginxPort" == "" ]; then
-        nginxPort="8080"
+        nginxPort="$nginxNextPort"
     fi
     for port in ${ports[*]};do
         if [ "${port:1}" == "$nginxPort" ]; then
@@ -121,7 +140,7 @@ db:
                 git clone "$temp" "$stack"/src
             fi
         fi
-    # RUN
+    # LEVANTAR STACK
         echo "Iniciar $stack [Y/n]?"
         read temp
         temp="${temp^^}"
