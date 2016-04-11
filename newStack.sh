@@ -9,10 +9,11 @@
 # ------------------
 #
 create() {
+#CONFIG COMPOSE
     if [ ! -f "/usr/local/bin/docker-compose" ]; then
         echo "No tienes instalado docker-compose. Instalarlo? [Y/n]"
-        read init
-        if [ "$init" != "n" ]; then
+        read temp
+        if [ "$temp" != "n" ]; then
             echo "Instalando docker-compose..."
             curl -L https://github.com/docker/compose/releases/download/1.6.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
             chmod +x /usr/local/bin/docker-compose
@@ -25,6 +26,7 @@ create() {
             return 0;
         fi
     fi
+#CONFIG SECTION
     ports=(`docker ps -a --format '{{.Ports}}' | grep ':[0-9]*' -o`)
     echo "------------------"
     echo "Crear un nuevo stack para Magento2"
@@ -33,6 +35,7 @@ create() {
     read stack
     stack="${stack^^}"
     stack="${stack}" | sed -e 's/^[ \t]*//'
+    host=${stack,,}
     if [ "$stack" == "" ]; then
         echo "Sin un nombre de stack no podemos continuar"
         return 0
@@ -103,13 +106,65 @@ db:
         - MYSQL_USER=pengo
         - MYSQL_PASSWORD=pengo123" > ./"$stack"/docker-compose.yml
         echo "... $stack creado"
+    # ICEBRICK
+        echo "Conectar con IceBrick [Y/n]?"
+        read temp
+        temp="${temp^^}"
+        temp="${temp}" | sed -e 's/^[ \t]*//'
+        init="no"
+        if [ "$temp" != "N" ]; then
+            echo "URL del repositorio a clonar"
+            read temp
+            temp="${temp}" | sed -e 's/^[ \t]*//'
+            if [ "$temp" != "" ]; then
+                init="yes"
+                git clone "$temp" "$stack"/src
+            fi
+        fi
+    # RUN
         echo "Iniciar $stack [Y/n]?"
-        read init
-        if [ "$init" != "n" ]; then
+        read temp
+        temp="${temp^^}"
+        temp="${temp}" | sed -e 's/^[ \t]*//'
+        if [ "$temp" != "N" ]; then
             cd "$stack"
             docker-compose up -d
             cd ..
+            docker exec -i "$host"_web_1 chmod +x bin/magento
+            if [ "$init" == "yes" ]; then
+                echo "Intentando crear contenido estatico"
+                docker exec -i "$host"_php_1 bin/magento setup:static-content:deploy
+                echo "Aplicando permisos"
+                docker exec -i "$host"_web_1 chmod 777 var/ pub/ -R
+            fi
             echo "$stack arriba!"
+        fi
+     # NGINX VHOST
+        echo "Crear vhost para Nginx [Y/n]?"
+        read temp
+        temp="${temp^^}"
+        temp="${temp}" | sed -e 's/^[ \t]*//'
+        if [ "$temp" != "N" ]; then
+            echo "Nombre del dominio (sin http://)"
+            read dominio
+            dominio="${dominio}" | sed -e 's/^[ \t]*//'
+            echo "upstream $dominio { server 127.0.0.1:$nginxPort; }
+                server {
+                  listen 80;
+                  server_name $dominio;
+                  access_log /var/log/nginx/$dominio.log;
+                  error_log /var/log/nginx/$dominio.err debug;
+                  location / {
+                    proxy_set_header Access-Control-Allow-Origin $http_origin;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarder-For $proxy_add_x_forwarded_for;
+                    proxy_set_header Host $http_host;
+                    proxy_set_header X-NginX-Proxy true;
+                    proxy_pass http://$dominio;
+                    proxy_redirect off;
+                  }
+                }" > "$stack"/"$dominio".cfg
+            echo "Plantilla de vhost creada en $stack/$dominio.cfg"
         fi
         echo "Con tu stack corriendo, puedes trabajar en http://localhost:$nginxPort"
         return 1
