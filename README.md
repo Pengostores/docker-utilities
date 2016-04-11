@@ -18,6 +18,6 @@ Para resolver los nombres de dominios de cada proyecto es necesario usar las fun
 ```
 ./startStack.sh nombreStack [-dump] [-static]
 ```
-> -dump Para que se cargue un dump en la base de datos del stack, es necesario que este exista en ./build/dump.slq
-> -static Reconstruye el contenido estático
+> [dump] Para que se cargue un dump en la base de datos del stack, es necesario que este exista en ./build/dump.slq
+> [static] Reconstruye el contenido estático
 
