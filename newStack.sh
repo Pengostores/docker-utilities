@@ -9,6 +9,10 @@
 # ------------------
 #
 create() {
+#CARPETA DE VHOST NGINX
+    if [ ! -d "./vhosts" ]; then
+        mkdir ./vhosts
+    fi
 #PUERTOS SIGUIENTES
     ports=(`docker ps -a --format '{{.Ports}}' | grep ':[0-9]*' -o`)
     phpPort=9000
@@ -140,24 +144,6 @@ db:
                 git clone "$temp" "$stack"/src
             fi
         fi
-    # LEVANTAR STACK
-        echo "Iniciar $stack [Y/n]?"
-        read temp
-        temp="${temp^^}"
-        temp="${temp}" | sed -e 's/^[ \t]*//'
-        if [ "$temp" != "N" ]; then
-            cd "$stack"
-            docker-compose up -d
-            cd ..
-            docker exec -i "$host"_web_1 chmod +x bin/magento
-            if [ "$init" == "yes" ]; then
-                echo "Intentando crear contenido estatico"
-                docker exec -i "$host"_php_1 bin/magento setup:static-content:deploy
-                echo "Aplicando permisos"
-                docker exec -i "$host"_web_1 chmod 777 var/ pub/ -R
-            fi
-            echo "$stack arriba!"
-        fi
      # NGINX VHOST
         echo "Crear vhost para Nginx [Y/n]?"
         read temp
@@ -182,7 +168,7 @@ db:
                     proxy_pass http://$dominio;
                     proxy_redirect off;
                   }
-                }" > "$stack"/"$dominio".cfg
+                }" > ./vhosts/"$dominio".cfg
             echo "Plantilla de vhost creada en $stack/$dominio.cfg"
         fi
         echo "Con tu stack corriendo, puedes trabajar en http://localhost:$nginxPort"
