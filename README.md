@@ -12,3 +12,12 @@ Scripts utiles para manejo de Dockers
 ##nginxVhost.cfg
 Para resolver los nombres de dominios de cada proyecto es necesario usar las funciones de proxy de nginx, para esto crearemos un vhost que envíe cualquier petición del puerto 80 al docker que le corresponde.
 > Nota: como siempre hay que dar editar el hosts con el nombre del dominio.
+
+##startStack.sh
+####Uso:
+```
+./startStack.sh nombreStack [-dump] [-static] [-cache]
+```
+> -dump Para que se cargue un dump en la base de datos del stack, es necesario que este exista en ./build/dump.slq
+> -static Reconstruye el contenido estático
+> -cache Limpia el cache
