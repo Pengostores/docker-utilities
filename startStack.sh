@@ -7,34 +7,49 @@
 # @author: Ivan Miranda @deivanmiranda
 # ------------------
 #
-stack="${1^^}"
-stack="${stack}" | sed -e 's/^[ \t]*//'
-host=${stack,,}
+# APLICAR PARAMETROS ADICIONALES
+#echo "$#";
+for var in "$@"
+do
+	if [ "${var:0:1}" != "-" ]; then
+		stack="${var^^}"
+		stack="${stack}" | sed -e 's/^[ \t]*//'
+		host=${stack,,}
+	fi
+done
 if [ "$stack" == "" ]; then
     echo "Sin un nombre de stack no podemos continuar"
     exit;
 fi
+# LEVANTAR STACK
 cd "$stack"
 docker-compose up -d
-if [ "$2" == "-dump" ] || [ "$3" == "-dump" ] || [ "$4" == "-dump" ]; then
-	if [ -f "./build/dump.sql" ]; then
-		echo "Cargando dump..."
-		docker exec -i "$host"_db_1 mysql -upengo -ppengo123 mage2 < ./build/dump.sql
-		echo "Base cargada..."
-	else
-		echo "No existe el archivo build/dump.sql"
-	fi
-fi
-if [ "$2" == "-static" ] || [ "$3" == "-static" ] || [ "$4" == "-static" ]; then
-	echo "Recreando contenido estatico"
-	docker exec -i "$host"_php_1 bin/magento setup:static-content:deploy
-	echo "Aplicando permisos"
-	docker exec -i "$host"_web_1 chmod 777 var/ pub/ -R
-fi
-if [ "$2" == "-cache" ] || [ "$3" == "-cache" ] || [ "$4" == "-cache" ]; then
-	echo "Limpiando cache"
-	docker exec -i "$host"_php_1 bin/magento cache:clean
-	docker exec -i "$host"_php_1 bin/magento cache:flush
-fi
 cd ..
+docker exec -i "$host"_web_1 chmod +x bin/magento
+for var in "$@"
+do
+#DUMP
+	if [ "${var:1}" == "d" ] || [ "${var:2}" == "dump" ]; then
+		if [ -f "./build/dump.sql" ]; then
+			echo "Cargando dump..."
+			docker exec -i "$host"_db_1 mysql -upengo -ppengo123 mage2 < ./build/dump.sql
+			echo "Base cargada..."
+		else
+			echo "No existe el archivo build/dump.sql"
+		fi
+	fi
+#STATIC
+	if [ "${var:1}" == "s" ] || [ "${var:2}" == "static" ]; then
+		echo "Recreando contenido estatico"
+		docker exec -i "$host"_php_1 bin/magento setup:static-content:deploy
+		echo "Aplicando permisos"
+		docker exec -i "$host"_web_1 chmod 777 var/ pub/ -R
+	fi
+#CACHE
+	if [ "${var:1}" == "c" ] || [ "${var:2}" == "cache" ]; then
+		echo "Limpiando cache"
+		docker exec -i "$host"_php_1 bin/magento cache:clean
+		docker exec -i "$host"_php_1 bin/magento cache:flush
+	fi
+done
 echo "Stack $stack corriendo"
