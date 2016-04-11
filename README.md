@@ -2,6 +2,7 @@
 Scripts utiles para manejo de Dockers
 
 ##newStack.sh
+Crea un nuevo stack de desarrollo para Magento2
 ####Uso:
 ```
 ./newStack.sh
@@ -14,10 +15,12 @@ Para resolver los nombres de dominios de cada proyecto es necesario usar las fun
 > Nota: como siempre hay que dar editar el hosts con el nombre del dominio.
 
 ##startStack.sh
+Levanta un stack previamente registrado y permite hacer operaciones básicas dentro del contenido del contenedor
 ####Uso:
 ```
-./startStack.sh nombreStack [-dump] [-static]
+./startStack.sh nombreStack [-d|--dump] [-s|--static] [-c|--cache]
 ```
 > [dump] Para que se cargue un dump en la base de datos del stack, es necesario que este exista en ./build/dump.slq
 > [static] Reconstruye el contenido estático
+> [cache] Limpia el cache de magento
 
