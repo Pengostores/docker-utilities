@@ -30,3 +30,11 @@ Detiene la ejecución de un stack
 ```
 ./stopStack.sh nombreStack
 ```
+
+##rmStack.sh
+Elimina un stack (y los directorios asociados)
+####Uso:
+```
+./stopStack.sh nombreStack
+```
+> Pregunta antes de eliminar el directorio
