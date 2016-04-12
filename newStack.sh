@@ -8,7 +8,7 @@
 # @author: Ivan Miranda @deivanmiranda
 # ------------------
 #
-create() {
+function create() {
 #CARPETA DE VHOST NGINX
     if [ ! -d "./vhosts" ]; then
         mkdir ./vhosts
@@ -67,36 +67,62 @@ create() {
         echo "Ya tienes un stack llamado $stack"
         return 0
     fi
-    echo "Puerto de PHP: [$phpNextPort]"
-    read phpPort
-    phpPort="${phpPort}" | sed -e 's/^[ \t]*//'
-    if [ "$phpPort" == "" ]; then
+    if [ "${design}" == "1" ]; then
         phpPort="$phpNextPort"
-    fi
-    for port in ${ports[*]};do
-        if [ "${port:1}" == "$phpPort" ]; then
-            echo "Este puerto ya esta en uso"
-            return 0
-        fi
-    done
-    echo "Puerto de Nginx: [$nginxNextPort]"
-    read nginxPort
-    nginxPort="${nginxPort}" | sed -e 's/^[ \t]*//'
-    if [ "$nginxPort" == "" ]; then
         nginxPort="$nginxNextPort"
-    fi
-    for port in ${ports[*]};do
-        if [ "${port:1}" == "$nginxPort" ]; then
-            echo "Este puerto ya esta en uso"
-            return 0
+    else
+        echo "Puerto de PHP: [$phpNextPort]"
+        read phpPort
+        phpPort="${phpPort}" | sed -e 's/^[ \t]*//'
+        if [ "$phpPort" == "" ]; then
+            phpPort="$phpNextPort"
         fi
-    done
+        for port in ${ports[*]};do
+            if [ "${port:1}" == "$phpPort" ]; then
+                echo "Este puerto ya esta en uso"
+                return 0
+            fi
+        done
+        echo "Puerto de Nginx: [$nginxNextPort]"
+        read nginxPort
+        nginxPort="${nginxPort}" | sed -e 's/^[ \t]*//'
+        if [ "$nginxPort" == "" ]; then
+            nginxPort="$nginxNextPort"
+        fi
+        for port in ${ports[*]};do
+            if [ "${port:1}" == "$nginxPort" ]; then
+                echo "Este puerto ya esta en uso"
+                return 0
+            fi
+        done
+    fi
     mkdir "$stack"
     if [ -d "$stack" ]; then 
         mkdir "$stack"/build "$stack"/db "$stack"/logs "$stack"/logs/nginx "$stack"/src
         echo "Creando nuevo stack..."
-        echo "
-php:
+        if [ "${design}" == "1" ]; then
+            echo "php:
+    image: registry.pengostores.mx/pengo/php:mage2.0
+    ports:
+        - $phpPort:9000
+    volumes:
+        - ./src:/var/www/html
+web:
+    image: registry.pengostores.mx/pengo/nginx:mage2.0
+    ports:
+        - $nginxPort:80
+    volumes:
+        - ./logs/nginx:/var/log/nginx
+        - ./src:/var/www/html
+    environment:
+        - PHP_HOST=php
+        - PHP_PORT=9000
+        - APP_MAGE_MODE=developer
+        - VIRTUAL_HOST=webserver
+    links:
+        - php" > ./"$stack"/docker-compose.yml
+        else
+            echo "php:
     image: registry.pengostores.mx/pengo/php:mage2.0
     ports:
         - $phpPort:9000
@@ -128,6 +154,7 @@ db:
         - MYSQL_DATABASE=mage2
         - MYSQL_USER=pengo
         - MYSQL_PASSWORD=pengo123" > ./"$stack"/docker-compose.yml
+        fi
         echo "... $stack creado"
     # ICEBRICK
         echo "Conectar con IceBrick [Y/n]?"
@@ -179,4 +206,11 @@ db:
     fi
 }
 
-create
+design="0"
+for var in "$@"
+do
+    if [ "${var:1}" == "d" ] || [ "${var:2}" == "design" ]; then
+        design="1"
+    fi
+done
+create $design
