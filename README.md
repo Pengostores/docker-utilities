@@ -5,8 +5,9 @@ Scripts utiles para manejo de Dockers
 Crea un nuevo stack de desarrollo para Magento2
 ####Uso:
 ```
-./newStack.sh
+./newStack.sh [-d|--design]
 ```
+> [design] Activa el modo de wizard para diseño (quita las referencias a las BD para poder usar staging y asigana los puertos disponibles automaticamente)
 
 > Si no se tiene instalado docker-compose se instala y activa el login del Pengo:registry, por lo que será necesario ejecutar de nuevo el script para crear el docker.
 
